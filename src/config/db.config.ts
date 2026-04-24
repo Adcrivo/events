@@ -7,7 +7,13 @@ let prisma: PrismaClient;
 export const initDatabase = async () => {
   try {
     if (!prisma) {
-      prisma = new PrismaClient();
+      prisma = new PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.DATABASE_URL,
+          },
+        },
+      });
     }
     await prisma.$connect();
     logInfo('Database connection established successfully');
@@ -20,7 +26,13 @@ export const initDatabase = async () => {
 
 export const getPrisma = (): PrismaClient => {
   if (!prisma) {
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
   }
   return prisma;
 };
