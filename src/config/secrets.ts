@@ -6,7 +6,7 @@ export const loadSecrets = async (): Promise<void> => {
   const env = process.env.NODE_ENV || 'development';
 
   // 1. Local Development: Just use dotenv
-  if (env === 'development' || env === 'test') {
+  if (env === 'development' || env === 'test' || env === 'dev') {
     dotenv.config();
     logInfo('Loaded secrets from .env file');
     return;
