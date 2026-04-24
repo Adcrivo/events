@@ -1,0 +1,9 @@
+---
+app_env: dev
+events_domain: dev.events.adcrivo.co
+# Database connection for migrations
+db_host: "adcrivo-db-dev.c3samq6sk67v.ap-south-1.rds.amazonaws.com"
+db_user: adcrivo_admin
+db_password: adcrivo123
+db_name: adcrivo_events_dev
+sqs_queue_url: "https://sqs.ap-south-1.amazonaws.com/794661977036/adcrivo-ad-events-dev"

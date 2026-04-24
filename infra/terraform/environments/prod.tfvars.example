@@ -1,0 +1,14 @@
+environment = "prod"
+aws_profile = "adcrivo-prod"
+
+# Database Configuration
+db_username = "adcrivo_admin"
+db_password = "CHANGE_ME_SECURE_PROD_123"
+db_name     = "adcrivo_analytics_prod"
+
+# Secrets
+api_key = "prod-api-key-XXXXX"
+
+# Overrides
+instance_type     = "t3.small"
+db_instance_class = "db.t3.small"

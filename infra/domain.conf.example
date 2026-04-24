@@ -1,0 +1,6 @@
+# Domain Configuration
+# Copy this file to domain.conf and update with your values
+# Leave domain_name empty if you don't want SSL/HTTPS
+
+domain_name=events.adcrivo.co
+ssl_email=adcrivo@gmail.com

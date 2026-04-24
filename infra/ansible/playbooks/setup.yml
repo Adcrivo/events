@@ -1,0 +1,8 @@
+---
+- name: Setup Events Server
+  hosts: all
+  become: true
+  roles:
+    - common
+    - nodejs
+    - nginx

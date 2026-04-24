@@ -1,0 +1,83 @@
+---
+# Ensure parent directory exists
+- name: Ensure app directory exists
+  ansible.builtin.file:
+    path: "{{ app_dir | dirname }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+
+# Clone or update adcrivo-db repository (Dependency)
+- name: Clone or update adcrivo-db repository
+  ansible.builtin.git:
+    repo: "https://github.com/{{ github_org | default('adcrivo') }}/adcrivo-db.git"
+    dest: "{{ app_dir | dirname }}/adcrivo-db"
+    version: "main"
+    force: true
+    accept_hostkey: true
+  become_user: "{{ app_user }}"
+
+# Clone or update events repository
+- name: Clone or update events repository
+  ansible.builtin.git:
+    repo: "{{ git_repo_url }}"
+    dest: "{{ app_dir }}"
+    version: "{{ git_branch }}"
+    force: true
+    accept_hostkey: true
+  become_user: "{{ app_user }}"
+
+# Install dependencies for adcrivo-db
+- name: Install dependencies for adcrivo-db
+  community.general.npm:
+    path: "{{ app_dir | dirname }}/adcrivo-db"
+    state: present
+  become_user: "{{ app_user }}"
+
+# Run Prisma Generate in adcrivo-db
+- name: Run Prisma Generate in adcrivo-db
+  ansible.builtin.command: npm run generate
+  args:
+    chdir: "{{ app_dir | dirname }}/adcrivo-db"
+  become_user: "{{ app_user }}"
+
+# Install dependencies for events service
+- name: Install dependencies for events service
+  community.general.npm:
+    path: "{{ app_dir }}"
+    state: present
+  become_user: "{{ app_user }}"
+
+# Build events service
+- name: Build events service
+  ansible.builtin.command: npm run build
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ app_user }}"
+
+# PM2 Management
+- name: Check if PM2 process exists
+  ansible.builtin.shell: pm2 describe events > /dev/null 2>&1
+  register: pm2_check
+  changed_when: false
+  failed_when: false
+  become_user: "{{ app_user }}"
+
+- name: Start events service with PM2 (first deploy)
+  ansible.builtin.shell: "pm2 start ecosystem.config.js --env production"
+  args:
+    chdir: "{{ app_dir }}"
+  when: pm2_check.rc != 0
+  become_user: "{{ app_user }}"
+
+- name: Restart events service with PM2 (subsequent deploys)
+  ansible.builtin.shell: "pm2 restart ecosystem.config.js --env production --update-env"
+  args:
+    chdir: "{{ app_dir }}"
+  when: pm2_check.rc == 0
+  become_user: "{{ app_user }}"
+
+- name: Save PM2 process list
+  ansible.builtin.command: pm2 save
+  become_user: "{{ app_user }}"

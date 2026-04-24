@@ -1,0 +1,10 @@
+environment = "dev"
+aws_profile = "adcrivo-dev"
+
+# Database Configuration
+db_username = "adcrivo_admin"
+db_password = "CHANGE_ME_SECURE_123"
+db_name     = "adcrivo_analytics_dev"
+
+# Secrets
+api_key = "dev-api-key-XXXXX"

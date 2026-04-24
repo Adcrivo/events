@@ -1,0 +1,59 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - build-essential
+      - python3-pip
+      - ufw
+    state: present
+
+- name: Setup Swap
+  block:
+    - name: Check if swap file exists
+      ansible.builtin.stat:
+        path: /swapfile
+      register: swap_file
+
+    - name: Create swap file
+      ansible.builtin.command: fallocate -l 2G /swapfile
+      when: not swap_file.stat.exists
+
+    - name: Set swap permissions
+      ansible.builtin.file:
+        path: /swapfile
+        mode: '0600'
+      when: not swap_file.stat.exists
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      when: not swap_file.stat.exists
+
+    - name: Enable swap
+      ansible.builtin.command: swapon /swapfile
+      when: not swap_file.stat.exists
+
+- name: Allow SSH, HTTP, HTTPS in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22"
+    - "80"
+    - "443"
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    policy: deny
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC

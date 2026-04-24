@@ -1,0 +1,14 @@
+---
+- name: Add NodeSource repo
+  ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+
+- name: Install Node.js
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+
+- name: Install PM2 globally
+  community.general.npm:
+    name: pm2
+    global: true
+    state: present

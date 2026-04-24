@@ -1,0 +1,8 @@
+---
+app_env: prod
+events_domain: events.adcrivo.co
+# Database connection for migrations
+db_host: "YOUR_PROD_RDS_ENDPOINT"
+db_user: adcrivo_admin
+db_password: CHANGE_ME_SECURE_PROD_123
+db_name: adcrivo_events_prod

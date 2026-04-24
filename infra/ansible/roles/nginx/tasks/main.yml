@@ -1,0 +1,28 @@
+---
+- name: Install Nginx and Certbot
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Create Nginx config
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/events
+    mode: '0644'
+  notify: Reload Nginx
+
+- name: Enable Nginx config
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/events
+    dest: /etc/nginx/sites-enabled/events
+    state: link
+  notify: Reload Nginx
+
+- name: Remove default nginx config
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx

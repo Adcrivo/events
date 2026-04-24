@@ -1,0 +1,21 @@
+services:
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: events-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+    volumes:
+      - "./localstack-init:/etc/localstack/init/ready.d"
+    networks:
+      - local-events-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  local-events-network:
+    driver: bridge
