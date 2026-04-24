@@ -1,4 +1,4 @@
-import { AdEvent } from '@adcrivo/db';
+import { AdEvent } from '@prisma/client';
 
 export interface AdEventData {
   adId: string;
