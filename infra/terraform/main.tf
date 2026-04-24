@@ -38,4 +38,5 @@ module "ssm" {
   node_env      = var.environment == "prod" ? "production" : "development"
   app_port      = var.app_port
   log_level     = var.log_level
+  database_url  = var.database_url
 }

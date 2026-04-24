@@ -3,5 +3,5 @@ app_user: ubuntu
 app_dir: /home/ubuntu/adcrivo-events
 git_repo_url: "https://{{ lookup('env', 'GIT_PAT') }}@github.com/Adcrivo/events.git"
 git_branch: main
-pm2_app_name: events-service
+pm2_app_name: events
 node_env: "{{ app_env }}"

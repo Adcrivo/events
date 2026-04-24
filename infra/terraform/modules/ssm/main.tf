@@ -39,3 +39,10 @@ resource "aws_ssm_parameter" "log_level" {
   value       = var.log_level
   overwrite   = true
 }
+
+resource "aws_ssm_parameter" "database_url" {
+  name        = "/adcrivo-events/${var.environment}/DATABASE_URL"
+  type        = "SecureString"
+  value       = var.database_url
+  overwrite   = true
+}

@@ -41,7 +41,7 @@
 
 # PM2 Management
 - name: Check if PM2 process exists
-  ansible.builtin.shell: pm2 describe events > /dev/null 2>&1
+  ansible.builtin.shell: "pm2 describe {{ pm2_app_name }} > /dev/null 2>&1"
   register: pm2_check
   changed_when: false
   failed_when: false

@@ -37,3 +37,9 @@ variable "log_level" {
   type        = string
   default     = "info"
 }
+
+variable "database_url" {
+  description = "Full Database URL for the application"
+  type        = string
+  sensitive   = true
+}
