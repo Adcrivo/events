@@ -9,13 +9,12 @@ module.exports = {
             watch: false,
             max_memory_restart: '800M',
             env: {
-                NODE_ENV: 'dev',
+                NODE_ENV: process.env.NODE_ENV || 'development',
+                PORT: 8080
             },
             env_production: {
-                NODE_ENV: process.env.NODE_ENV || 'development',
-                PORT: 8080,
-                DATABASE_URL: process.env.DATABASE_URL,
-                SQS_QUEUE_URL: process.env.SQS_QUEUE_URL
+                NODE_ENV: 'production',
+                PORT: 8080
             },
         },
     ],
