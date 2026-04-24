@@ -16,7 +16,7 @@ datasource db {
 model AdEvent {
   id        Int      @id @default(autoincrement())
   timestamp DateTime @default(now())
-  adId      String   @db.Uuid
+  adId      String
   userId    String
   eventType String   // e.g., click, impression, video_start, video_25, video_50, video_75, video_completed
   eventData Json?
