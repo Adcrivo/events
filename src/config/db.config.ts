@@ -26,6 +26,9 @@ export const initDatabase = async () => {
 
 export const getPrisma = (): PrismaClient => {
   if (!prisma) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('Prisma initialized before DATABASE_URL was set. Ensure loadSecrets() is completed.');
+    }
     prisma = new PrismaClient({
       datasources: {
         db: {

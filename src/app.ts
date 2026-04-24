@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { json } from 'body-parser';
-import adsRoutes from './routes/adEvent.routes';
 import errorHandler from './middleware/errorHandler';
-// import { rateLimiter } from './middleware/rateLimiter';
 import { apiKeyMiddleware } from './middleware/apiKey';
 import { initDatabase } from './config/db.config';
 import { AdEventConsumer } from './services/adEvent.consumer';
@@ -20,19 +18,12 @@ app.use(cors({
 }));
 app.use(json());
 
-// Health check endpoint (before API key middleware)
+// Health check endpoint (always available)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// app.use(rateLimiter); // disabled rate limiter for now
 app.use(apiKeyMiddleware);
-
-// Routes
-app.use('/api/adEvent', adsRoutes);
-
-// Error handling middleware
-app.use(errorHandler);
 
 // Graceful shutdown handler
 const gracefulShutdown = async () => {
@@ -44,37 +35,42 @@ const gracefulShutdown = async () => {
   }
 };
 
-// Handle graceful shutdown
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 // Start the server after ensuring connections
 const startServer = async () => {
   try {
-    // Load secrets from .env (local) or AWS SSM (deployed)
+    // 1. Load secrets FIRST
     await loadSecrets();
 
-    // Initialize database connection
+    // 2. Initialize database
     await initDatabase();
     logInfo('Database connection established successfully');
 
-    // Initialize SQS Consumer
+    // 3. Initialize SQS Consumer
     const consumer = new AdEventConsumer();
-
-    // Start consumer in background (don't block server startup)
+    
     if (process.env.NODE_ENV === 'development') {
       await sqsClient.ensureQueueExists('adcrivo-ad-events-local').catch(err => {
-        logError(`Warning: Could not ensure queue exists (LocalStack may not be running): ${err}`);
+        logError(`Warning: Could not ensure queue exists: ${err}`);
       });
     }
 
-    // Start polling without blocking
     consumer.startPolling().catch(err => {
       logError(`SQS Consumer error: ${err}`);
     });
     logInfo('SQS Consumer started in background');
 
-    // Start the HTTP server
+    // 4. Import and Register Routes ONLY after secrets are loaded
+    // This prevents premature Prisma initialization
+    const adsRoutes = (await import('./routes/adEvent.routes')).default;
+    app.use('/api/adEvent', adsRoutes);
+
+    // 5. Error handling
+    app.use(errorHandler);
+
+    // 6. Start listening
     app.listen(PORT, () => {
       logInfo(`Server is running on http://localhost:${PORT}`);
     });

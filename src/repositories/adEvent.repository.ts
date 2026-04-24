@@ -2,7 +2,9 @@ import getPrisma from '../config/db.config';
 import { AdEvent, AdEventData } from '../types/index';
 
 export class AdEventRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async createEvent(eventData: AdEventData): Promise<AdEvent> {
     return await this.prisma.adEvent.create({
