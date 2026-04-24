@@ -15,7 +15,7 @@ provider "aws" {
 }
 
 # ─────────────────────────────────────────────────────────────
-# SQS  —  Queue
+# SQS  —  Queue for Ad Events
 # ─────────────────────────────────────────────────────────────
 module "sqs" {
   source = "./modules/sqs"
@@ -26,16 +26,16 @@ module "sqs" {
 # ─────────────────────────────────────────────────────────────
 # SSM  —  Parameters for Events Service
 # ─────────────────────────────────────────────────────────────
-# Note: Database parameters are now managed in the adcrivo-db repository.
-# Note: Shared EC2 role from live service will be updated to include permissions for these parameters.
+# Note: Database parameters are managed in the adcrivo-db repository.
+# Note: Shared EC2 role from live service includes permissions for these.
 module "ssm" {
   source = "./modules/ssm"
 
-  environment       = var.environment
-  sqs_queue_url     = module.sqs.queue_url
-  sqs_queue_arn     = module.sqs.queue_arn
-  api_key           = var.api_key
-  node_env          = var.environment == "prod" ? "production" : "development"
-  app_port          = var.app_port
-  log_level         = var.log_level
+  environment   = var.environment
+  sqs_queue_url = module.sqs.queue_url
+  sqs_queue_arn = module.sqs.queue_arn
+  api_key       = var.api_key
+  node_env      = var.environment == "prod" ? "production" : "development"
+  app_port      = var.app_port
+  log_level     = var.log_level
 }

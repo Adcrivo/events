@@ -1,0 +1,129 @@
+// Unified Prisma Schema for Adcrivo (Moved to Events Repository)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Events Service Models
+// ─────────────────────────────────────────────────────────────
+
+model AdEvent {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  adId      String   @db.Uuid
+  userId    String
+  eventType String   // e.g., click, impression, video_start, video_25, video_50, video_75, video_completed
+  eventData Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ad_events")
+  @@index([adId, timestamp])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Backend (Studio) Models
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdBy Int?
+  updatedBy Int?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Brand {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  logo        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("brands")
+}
+
+model Campaign {
+  id          String   @id @default(uuid()) @db.Uuid
+  brandId     String   @db.Uuid
+  name        String
+  description String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("campaigns")
+}
+
+model Creative {
+  id          String   @id @default(uuid()) @db.Uuid
+  campaignId  String   @db.Uuid
+  name        String
+  type        String   // image, video, html
+  url         String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("creatives")
+}
+
+model Ad {
+  id          String   @id @default(uuid()) @db.Uuid
+  creativeId  String   @db.Uuid
+  campaignId  String   @db.Uuid
+  name        String
+  description String
+  height      Int?
+  width       Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ads")
+}
+
+model Template {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("templates")
+}
+
+// Legacy/Aggregated Events
+model AggregatedEvent {
+  id                 Int      @id @default(autoincrement())
+  entityType         String   // creative, campaign, brand
+  entityId           String
+  impressions        Int      @default(0)
+  clicks             Int      @default(0)
+  videoViewStart     Int      @default(0)
+  videoView25        Int      @default(0)
+  videoView50        Int      @default(0)
+  videoView75        Int      @default(0)
+  videoViewCompleted Int      @default(0)
+  domains            String[] @default([])
+  deviceTypes        String[] @default([])
+  viewability        Float    @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("aggregated_events")
+  @@index([entityType, entityId])
+}

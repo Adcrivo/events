@@ -1,11 +1,19 @@
-output "ec2_public_ip" {
-  value = module.compute.app_server_public_ip
-}
-
-output "db_endpoint" {
-  value = module.database.db_endpoint
-}
-
+# ─────────────────────────────────────────────────────────────
+# SQS Outputs
+# ─────────────────────────────────────────────────────────────
 output "sqs_queue_url" {
-  value = module.sqs.queue_url
+  description = "The URL of the SQS queue for ad events"
+  value       = module.sqs.queue_url
+}
+
+output "sqs_queue_arn" {
+  description = "The ARN of the SQS queue for ad events"
+  value       = module.sqs.queue_arn
+}
+
+# ─────────────────────────────────────────────────────────────
+# Environment Info
+# ─────────────────────────────────────────────────────────────
+output "environment" {
+  value = var.environment
 }

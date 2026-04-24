@@ -12,7 +12,7 @@ A high-performance Node.js/TypeScript service for tracking ad events (clicks, im
 ## Quick Start
 
 ### 1. Provision Infrastructure (Terraform)
-Provision the AWS resources (SQS, SSM) for your environment:
+Provision the environment-specific SQS queues and SSM parameters:
 
 ```bash
 cd infra/terraform
@@ -22,90 +22,61 @@ terraform init -backend-config=environments/dev.backend.hcl
 terraform apply -var-file=environments/dev.tfvars
 
 # For Prod
-terraform init -reconfigure -backend-config=environments/prod.backend.hcl
+terraform init -backend-config=environments/prod.backend.hcl
 terraform apply -var-file=environments/prod.tfvars
 ```
 
 ### 2. Configure DNS (GoDaddy)
-Point your subdomain to the EC2 Public IP (shared with live service):
-*   **Prod:** `events` → `PROD_IP`
-*   **Dev:** `dev.events` → `DEV_IP`
+Point your subdomain to the shared EC2 Public IP:
+*   **IP Address:** `3.6.76.128` (Standardized production IP)
+*   **Record:** `events` → `3.6.76.128`
 
 ### 3. Deploy Application (Ansible)
-Deploy the latest code and configure Nginx/SSL:
+Deploy the latest code and configure Nginx/SSL. This service is co-located with the `live` service on the same EC2 instance.
 
 ```bash
 cd infra/ansible
 export GIT_PAT=your_github_token
 
-# Deploy to Dev
-ansible-playbook -i inventory/dev.ini playbooks/deploy.yml
+# 1. Initial Setup (Nginx, SSL, System Deps)
+# Note: Ensure DNS is pointed before running setup for SSL to work
+ansible-playbook -i inventory/prod.ini playbooks/setup.yml
 
-# Deploy to Prod
+# 2. Deploy/Update Application
 ansible-playbook -i inventory/prod.ini playbooks/deploy.yml
 ```
+
+## Deployment Flow (Production)
+
+The deployment flow is standardized across Adcrivo services:
+1.  **Infrastructure**: Provision SQS and SSM parameters via Terraform.
+2.  **Shared DB**: The deployment clones the `adcrivo-db` repository into the parent directory on the server to provide the unified Prisma client.
+3.  **Secrets Management**: Environment variables are fetched from AWS SSM Parameter Store at application startup (`/ADCRIVO-EVENTS/PROD/*` and `/ADCRIVO-DB/PROD/*`).
+4.  **Process Management**: PM2 manages the application process (`events-service`).
+5.  **Reverse Proxy**: Nginx handles SSL termination via Let's Encrypt (Certbot) and proxies requests to port `8080`.
 
 ## Monitoring & Logs
 
 ### Check Status
 ```bash
-ansible all -i inventory/dev.ini -m shell -a "pm2 status" -b
+ansible all -i inventory/prod.ini -m shell -a "pm2 status" -b
 ```
 
-### Application Logs (Console)
+### Application Logs (PM2)
 ```bash
-ansible all -i inventory/dev.ini -m shell -a "pm2 logs adcrivo-events --lines 50 --no-daemon" -b
+ansible all -i inventory/prod.ini -m shell -a "pm2 logs events --lines 50" -b
 ```
 
 ### Server-Side File Logs
 ```bash
 # Combined Logs
-ansible all -i inventory/dev.ini -m shell -a "tail -n 100 /home/ubuntu/adcrivo-events/logs/app.log" -b
-
-# Error Logs
-ansible all -i inventory/dev.ini -m shell -a "tail -n 100 /home/ubuntu/adcrivo-events/logs/error.log" -b
+ansible all -i inventory/prod.ini -m shell -a "tail -n 100 /home/ubuntu/adcrivo-events/logs/app.log" -b
 ```
-
-## API Endpoints
-
-All endpoints (except `/health`) require an `x-api-key` header.
-
-- `GET /health` - Health check
-- `POST /api/adEvent` - Track a new ad event (queued via SQS)
-- `GET /api/adEvent/:adId` - Retrieve events for a specific ad
-- `GET /api/adEvent/:adId/time-range` - Retrieve events within a time range
-
-### Example Usage
-
-```bash
-# Track Event
-curl -X POST https://dev.events.adcrivo.co/api/adEvent \
-  -H "x-api-key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "adId": "test-ad-123",
-  "userId": "test-user-456",
-  "eventType": "click",
-  "eventData": {
-    "campaign": "spring-sale"
-  }
-}'
-```
-
-## Project Structure
-
-*   `src/`: Application source code (TypeScript)
-*   `src/sqs/`: SQS client and queue management
-*   `src/services/adEvent.consumer.ts`: Background worker for processing events from SQS
-*   `infra/terraform/`: Infrastructure as Code (SQS, SSM)
-*   `infra/ansible/`: Configuration Management & Deployment
-*   `ecosystem.config.js`: PM2 Process Management configuration
 
 ## Security
 *   ✅ **HTTPS Enforcement:** Automatic HTTP → HTTPS redirection via Nginx.
-*   ✅ **API Key Protection:** Middleware-secured endpoints.
-*   ✅ **Asynchronous Processing:** SQS decouples API response from DB writes.
-*   ✅ **SSM Integration:** Secrets and environment variables managed via AWS SSM Parameter Store.
+*   ✅ **IAM-based Secrets:** EC2 instance uses an IAM role to securely fetch SSM parameters.
+*   ✅ **Shared Data Layer:** Uses the unified `@adcrivo/db` package for schema consistency.
 
 ---
-*Last Updated: April 2026*
+*Last Updated: 2026-04-24*

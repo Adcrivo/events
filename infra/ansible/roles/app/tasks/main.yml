@@ -8,16 +8,6 @@
     group: "{{ app_user }}"
     mode: '0755'
 
-# Clone or update adcrivo-db repository (Dependency)
-- name: Clone or update adcrivo-db repository
-  ansible.builtin.git:
-    repo: "https://github.com/{{ github_org | default('adcrivo') }}/adcrivo-db.git"
-    dest: "{{ app_dir | dirname }}/adcrivo-db"
-    version: "main"
-    force: true
-    accept_hostkey: true
-  become_user: "{{ app_user }}"
-
 # Clone or update events repository
 - name: Clone or update events repository
   ansible.builtin.git:
@@ -28,25 +18,18 @@
     accept_hostkey: true
   become_user: "{{ app_user }}"
 
-# Install dependencies for adcrivo-db
-- name: Install dependencies for adcrivo-db
-  community.general.npm:
-    path: "{{ app_dir | dirname }}/adcrivo-db"
-    state: present
-  become_user: "{{ app_user }}"
-
-# Run Prisma Generate in adcrivo-db
-- name: Run Prisma Generate in adcrivo-db
-  ansible.builtin.command: npm run generate
-  args:
-    chdir: "{{ app_dir | dirname }}/adcrivo-db"
-  become_user: "{{ app_user }}"
-
 # Install dependencies for events service
 - name: Install dependencies for events service
   community.general.npm:
     path: "{{ app_dir }}"
     state: present
+  become_user: "{{ app_user }}"
+
+# Run Prisma Generate (local schema)
+- name: Run Prisma Generate
+  ansible.builtin.command: npm run generate
+  args:
+    chdir: "{{ app_dir }}"
   become_user: "{{ app_user }}"
 
 # Build events service
@@ -65,19 +48,24 @@
   become_user: "{{ app_user }}"
 
 - name: Start events service with PM2 (first deploy)
-  ansible.builtin.shell: "pm2 start ecosystem.config.js --env production"
+  ansible.builtin.shell: "NODE_ENV={{ app_env }} pm2 start ecosystem.config.js"
   args:
     chdir: "{{ app_dir }}"
   when: pm2_check.rc != 0
   become_user: "{{ app_user }}"
 
 - name: Restart events service with PM2 (subsequent deploys)
-  ansible.builtin.shell: "pm2 restart ecosystem.config.js --env production --update-env"
-  args:
-    chdir: "{{ app_dir }}"
+  ansible.builtin.shell: "NODE_ENV={{ app_env }} pm2 restart {{ pm2_app_name }} --update-env"
   when: pm2_check.rc == 0
   become_user: "{{ app_user }}"
 
 - name: Save PM2 process list
   ansible.builtin.command: pm2 save
   become_user: "{{ app_user }}"
+
+- name: Setup PM2 startup on boot
+  ansible.builtin.command: "pm2 startup systemd -u {{ app_user }} --hp /home/{{ app_user }}"
+  args:
+    creates: "/etc/systemd/system/pm2-{{ app_user }}.service"
+  become: true
+

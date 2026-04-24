@@ -8,10 +8,10 @@
     "build": "tsc",
     "test": "jest",
     "dev": "ts-node-dev --respawn src/app.ts",
-    "postinstall": "prisma generate --schema=node_modules/@adcrivo/db/prisma/schema.prisma"
+    "generate": "prisma generate --schema=prisma/schema.prisma",
+    "postinstall": "npm run generate"
   },
   "dependencies": {
-    "@adcrivo/db": "file:../adcrivo-db",
     "@aws-sdk/client-sqs": "^3.400.0",
     "@aws-sdk/client-ssm": "^3.1032.0",
     "@prisma/client": "^5.8.0",

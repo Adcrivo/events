@@ -4,7 +4,7 @@ import { logInfo, logError } from "../utils/logger";
 
 export const loadSecrets = async () => {
   const env = process.env.NODE_ENV || 'development';
-  
+
   // Load .env for local development
   if (env === 'development' || env === 'test') {
     dotenv.config();
@@ -18,7 +18,7 @@ export const loadSecrets = async () => {
 
   try {
     logInfo(`Fetching secrets from SSM path: ${path}`);
-    
+
     const command = new GetParametersByPathCommand({
       Path: path,
       WithDecryption: true,
@@ -75,7 +75,7 @@ export const loadSecrets = async () => {
       WithDecryption: true,
       Recursive: true
     });
-    
+
     const sharedResponse = await client.send(sharedCommand);
     if (sharedResponse.Parameters) {
       sharedResponse.Parameters.forEach(param => {

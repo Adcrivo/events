@@ -6,22 +6,21 @@
     - app
 
   post_tasks:
-    - name: Wait for service to start
-      ansible.builtin.pause:
-        seconds: 10
-
-    - name: Check Events Service Health
+    - name: Wait for application to start
       ansible.builtin.uri:
         url: "http://localhost:8080/health"
         status_code: 200
-      register: events_health
-      ignore_errors: true
+      register: result
+      until: result.status == 200
+      retries: 10
+      delay: 5
 
-    - name: Deployment Summary
+    - name: Deployment summary
       ansible.builtin.debug:
         msg:
-          - "🚀 Deployment Status"
-          - "------------------------------------"
-          - "Events Service (8080): {{ '✅ UP' if events_health.status | default(0) == 200 else '❌ DOWN' }}"
-          - "------------------------------------"
-          - "URL: http://{{ events_domain }}"
+          - "✅ Events Service deployed"
+          - "Directory: {{ app_dir }}"
+          - "Port: 8080"
+          - "Health: PASSED"
+          - "URL: https://{{ events_domain }}"
+
