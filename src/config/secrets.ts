@@ -60,12 +60,18 @@ export const loadSecrets = async () => {
       });
     }
 
-    // Construct DATABASE_URL if all components are present
-    if (process.env.DB_ENDPOINT && process.env.DB_USERNAME && process.env.DB_PASSWORD && process.env.DB_NAME) {
+    // Construct DATABASE_URL
+    // Priority 1: Use the pre-constructed URL from SSM if available
+    // Priority 2: Construct from individual components with proper encoding
+    if (process.env.DB_DATABASE_URL) {
+      process.env.DATABASE_URL = process.env.DB_DATABASE_URL;
+      logInfo('Using DATABASE_URL from SSM');
+    } else if (process.env.DB_ENDPOINT && process.env.DB_USERNAME && process.env.DB_PASSWORD && process.env.DB_NAME) {
       const host = process.env.DB_ENDPOINT.split(':')[0];
       const port = process.env.DB_PORT || '5432';
-      process.env.DATABASE_URL = `postgresql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${host}:${port}/${process.env.DB_NAME}?schema=public`;
-      logInfo('Constructed DATABASE_URL from SSM parameters');
+      const encodedPassword = encodeURIComponent(process.env.DB_PASSWORD);
+      process.env.DATABASE_URL = `postgresql://${process.env.DB_USERNAME}:${encodedPassword}@${host}:${port}/${process.env.DB_NAME}?schema=public`;
+      logInfo('Constructed DATABASE_URL from individual SSM parameters');
     }
 
     // Also fetch shared parameters if they exist
